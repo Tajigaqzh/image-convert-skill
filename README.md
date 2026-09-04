@@ -21,14 +21,14 @@ Convert images between common raster formats with customizable quality settings.
 ### One-Click Install (Recommended)
 
 ```bash
-claude marketplace add https://github.com/Tajigaqzh/image-convert
+claude marketplace add https://github.com/Tajigaqzh/image-convert-skill
 claude plugin install image-convert@image-convert-marketplace
 ```
 
 ### Manual Install
 
 ```bash
-git clone https://github.com/Tajigaqzh/image-convert.git ~/.codex/skills/image-convert
+git clone https://github.com/Tajigaqzh/image-convert-skill.git ~/.codex/skills/image-convert
 cd ~/.codex/skills/image-convert
 npm install
 ```

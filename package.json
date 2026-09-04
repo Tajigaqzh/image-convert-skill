@@ -7,12 +7,12 @@
   "author": "Tajigaqzh",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tajigaqzh/image-convert.git"
+    "url": "git+https://github.com/Tajigaqzh/image-convert-skill.git"
   },
   "bugs": {
-    "url": "https://github.com/Tajigaqzh/image-convert/issues"
+    "url": "https://github.com/Tajigaqzh/image-convert-skill/issues"
   },
-  "homepage": "https://github.com/Tajigaqzh/image-convert#readme",
+  "homepage": "https://github.com/Tajigaqzh/image-convert-skill#readme",
   "scripts": {
     "convert": "node scripts/convert-image.mjs"
   },
