@@ -1,0 +1,22 @@
+{
+  "name": "image-convert-skill",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Convert images between common formats",
+  "author": "Tajigaqzh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tajigaqzh/image-convert.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Tajigaqzh/image-convert/issues"
+  },
+  "homepage": "https://github.com/Tajigaqzh/image-convert#readme",
+  "scripts": {
+    "convert": "node scripts/convert-image.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

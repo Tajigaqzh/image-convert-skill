@@ -1,0 +1,3 @@
+interface:
+  display_name: "Image Convert"
+  short_description: "Convert images between multiple formats with customizable quality"

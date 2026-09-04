@@ -1,0 +1,20 @@
+{
+  "name": "image-convert-marketplace",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "name": "image-convert",
+      "description": "Convert images between WebP, PNG, JPEG, AVIF, TIFF, GIF, HEIF/HEIC, and JP2 formats with customizable quality settings",
+      "version": "1.0.0",
+      "source": {
+        "source": "github",
+        "repo": "Tajigaqzh/image-convert",
+        "ref": "main"
+      }
+    }
+  ],
+  "owner": {
+    "name": "Tajigaqzh",
+    "url": "https://github.com/Tajigaqzh"
+  }
+}

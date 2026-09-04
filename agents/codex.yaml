@@ -1,0 +1,3 @@
+interface:
+  display_name: "Image Format Converter"
+  short_description: "Convert images between WebP, PNG, JPEG, AVIF, TIFF, GIF, HEIF/HEIC, and JP2 formats with customizable quality settings"
