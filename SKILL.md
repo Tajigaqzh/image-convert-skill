@@ -14,8 +14,8 @@ Supported output formats are `webp`, `png`, `jpeg`, `jpg`, `avif`, `tiff`, `tif`
 - Format conversion between all supported formats
 - Image resizing with multiple fit modes (cover, contain, fill, inside, outside)
 - EXIF metadata preservation
-- Parallel processing (up to 16 workers)
-- Detailed conversion reports with file size comparison and compression ratios
+- Parallel processing by default using CPU cores - 1 (up to 16 workers)
+- Detailed conversion reports by default with per-file tables, totals, compression ratios, and the best conversion
 - Progress bar for batch operations
 - Smart file handling (skip existing, overwrite, dry-run preview)
 
@@ -31,6 +31,6 @@ node scripts/convert-image.mjs path/to/image.jpg --width=800 --height=600 --fit=
 node scripts/convert-image.mjs path/to/folder --preserve-metadata --parallel=4 --report
 ```
 
-Options: `--format=FORMAT` (or `--to=FORMAT`), `--quality=N`, `--recursive`, `--output-dir=PATH`, `--overwrite`, `--skip-existing`, `--dry-run`, `--no-progress`, `--width=N`, `--height=N`, `--fit=MODE`, `--preserve-metadata`, `--parallel=N`, `--report`
+Options: `--format=FORMAT` (or `--to=FORMAT`), `--quality=N`, `--recursive`, `--output-dir=PATH`, `--overwrite`, `--skip-existing`, `--dry-run`, `--no-progress`, `--width=N`, `--height=N`, `--fit=MODE`, `--preserve-metadata`, `--parallel=N`, `--report`, `--no-report`
 
 Write same-basename outputs beside each source, preserve originals, skip unsupported inputs and sources whose output path is identical, and report conversion failures. Do not delete sources or update repository references unless the user explicitly asks. If Sharp is unavailable, install dependencies in the skill directory with `npm install` (or `pnpm add -D sharp`) before retrying.

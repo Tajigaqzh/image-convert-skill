@@ -87,8 +87,9 @@ npm install
 - `--height=N` - Resize height (maintains aspect ratio if width not set)
 - `--fit=MODE` - Resize fit mode: cover, contain, fill, inside, outside (default: inside)
 - `--preserve-metadata` - Preserve EXIF and other metadata
-- `--parallel=N` - Process N images in parallel (default: 1, max: 16)
-- `--report` - Show detailed conversion report with file sizes and compression ratios
+- `--parallel=N` - Process N images in parallel (default: CPU cores - 1, max: 16)
+- `--report` - Show detailed conversion report with per-file sizes, compression ratios, totals, and the best conversion (default: on)
+- `--no-report` - Disable the conversion report
 - `--help, -h` - Show help message
 
 ## Supported Formats

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { execSync } from 'node:child_process';
@@ -79,8 +80,9 @@ Options:
   --height=N          Resize height (maintains aspect ratio if width not set)
   --fit=MODE          Resize fit mode: cover, contain, fill, inside, outside (default: inside)
   --preserve-metadata Preserve EXIF and other metadata
-  --parallel=N        Process N images in parallel (default: 1, max: CPU cores)
-  --report            Show detailed conversion report with file sizes
+  --parallel=N        Process N images in parallel (default: CPU cores - 1, max: 16)
+  --report            Show detailed conversion report with file sizes (default on)
+  --no-report         Disable the conversion report
   --help, -h          Show this help message
 
 Supported output formats: ${Object.keys(outputFormats).join(', ')}
@@ -118,8 +120,10 @@ const fitArg = args.find((arg) => arg.startsWith('--fit='));
 const fit = fitArg ? fitArg.split('=')[1] : 'inside';
 const preserveMetadata = args.includes('--preserve-metadata');
 const parallelArg = args.find((arg) => arg.startsWith('--parallel='));
-const parallel = parallelArg ? Math.max(1, Math.min(Number(parallelArg.split('=')[1]), 16)) : 1;
-const showReport = args.includes('--report');
+const cpuCount = os.cpus().length || 1;
+const defaultParallel = Math.max(1, Math.min(cpuCount - 1, 16));
+const parallel = parallelArg ? Math.max(1, Math.min(Number(parallelArg.split('=')[1]), 16)) : defaultParallel;
+const showReport = !args.includes('--no-report');
 
 const validFitModes = ['cover', 'contain', 'fill', 'inside', 'outside'];
 if (!validFitModes.includes(fit)) {
@@ -167,7 +171,7 @@ function drawProgress(current, total, barLength = 30) {
   if (!showProgress) return;
   const percent = Math.floor((current / total) * 100);
   const filled = Math.floor((current / total) * barLength);
-  const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+  const bar = '='.repeat(filled) + '-'.repeat(barLength - filled);
   process.stdout.write(`\r[${bar}] ${percent}% (${current}/${total})`);
   if (current === total) process.stdout.write('\n');
 }
@@ -179,6 +183,19 @@ function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
+
+function formatPercent(value) {
+  return `${value.toFixed(1)}%`;
+}
+
+function buildTable(rows, headers) {
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...rows.map((row) => String(row[index]).length))
+  );
+  const line = (cells) => `| ${cells.map((cell, index) => String(cell).padEnd(widths[index])).join(' | ')} |`;
+  const separator = `|-${widths.map((width) => '-'.repeat(width)).join('-|-')}-|`;
+  return [line(headers), separator, ...rows.map(line)].join('\n');
 }
 
 // Process a single file
@@ -207,7 +224,7 @@ async function processFile(source, outputPath, stats) {
   if (showReport) {
     const outputSize = (await fs.stat(outputPath)).size;
     const duration = Date.now() - startTime;
-    const ratio = ((1 - outputSize / sourceSize) * 100).toFixed(1);
+    const ratio = sourceSize === 0 ? 0 : (1 - outputSize / sourceSize) * 100;
     stats.push({
       source,
       output: outputPath,
@@ -303,7 +320,7 @@ for (const source of files) {
   }
 
   if (dryRun) {
-    console.log(`${source} → ${output}`);
+    console.log(`${source} -> ${output}`);
     converted += 1;
   } else {
     tasks.push({ source, output });
@@ -312,8 +329,11 @@ for (const source of files) {
 
 // Process tasks
 if (!dryRun && tasks.length > 0) {
-  const processTasks = tasks.map(({ source, output }) => async () => {
+  const processTasks = tasks.map(({ source, output }, index) => async () => {
     try {
+      if (showProgress) {
+        console.log(`[${index + 1}/${tasks.length}] ${path.basename(source)}`);
+      }
       await processFile(source, output, conversionStats);
       if (!showProgress) console.log(output);
       converted += 1;
@@ -345,25 +365,28 @@ if (showReport && conversionStats.length > 0) {
   const totalSourceSize = conversionStats.reduce((sum, s) => sum + s.sourceSize, 0);
   const totalOutputSize = conversionStats.reduce((sum, s) => sum + s.outputSize, 0);
   const totalSaved = totalSourceSize - totalOutputSize;
-  const avgRatio = ((1 - totalOutputSize / totalSourceSize) * 100).toFixed(1);
   const totalDuration = conversionStats.reduce((sum, s) => sum + s.duration, 0);
+  const totalRatio = totalSourceSize === 0 ? 0 : (1 - totalOutputSize / totalSourceSize) * 100;
+  const bestConversion = conversionStats.reduce((best, stat) => (stat.ratio > best.ratio ? stat : best), conversionStats[0]);
 
-  console.log(`\nTotal files:       ${conversionStats.length}`);
-  console.log(`Original size:     ${formatBytes(totalSourceSize)}`);
-  console.log(`Converted size:    ${formatBytes(totalOutputSize)}`);
-  console.log(`Space saved:       ${formatBytes(totalSaved)} (${avgRatio}% reduction)`);
-  console.log(`Total time:        ${(totalDuration / 1000).toFixed(2)}s`);
-  console.log(`Avg time/file:     ${(totalDuration / conversionStats.length).toFixed(0)}ms`);
+  const fileRows = conversionStats.map((stat) => [
+    path.basename(stat.source),
+    formatBytes(stat.sourceSize),
+    formatBytes(stat.outputSize),
+    formatPercent(stat.ratio),
+    `${stat.duration}ms`,
+  ]);
 
-  if (conversionStats.length <= 10) {
-    console.log('\nPer-file statistics:');
-    console.log('-'.repeat(80));
-    for (const stat of conversionStats) {
-      const saved = stat.sourceSize - stat.outputSize;
-      console.log(`${path.basename(stat.source)}`);
-      console.log(`  ${formatBytes(stat.sourceSize)} → ${formatBytes(stat.outputSize)} (${stat.ratio}% saved, ${saved > 0 ? '-' : '+'}${formatBytes(Math.abs(saved))}, ${stat.duration}ms)`);
-    }
-  }
+  console.log('\nPer-file results:');
+  console.log(buildTable(fileRows, ['File', 'Original Size', 'Converted Size', 'Compression', 'Time']));
+  console.log('\nSummary:');
+  console.log(buildTable([
+    ['Total', formatBytes(totalSourceSize), formatBytes(totalOutputSize), formatPercent(totalRatio), `${formatBytes(totalSaved)} saved`],
+  ], ['Type', 'Original Size', 'Converted Size', 'Compression', 'Notes']));
+  console.log(buildTable([
+    [path.basename(bestConversion.source), formatBytes(bestConversion.sourceSize), formatBytes(bestConversion.outputSize), formatPercent(bestConversion.ratio), `${bestConversion.duration}ms`],
+  ], ['Best File', 'Original Size', 'Converted Size', 'Compression', 'Time']));
+  console.log(`\nTotal time: ${(totalDuration / 1000).toFixed(2)}s (${totalDuration}ms)`);
   console.log('='.repeat(80) + '\n');
 }
 
